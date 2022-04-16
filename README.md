@@ -18,7 +18,7 @@ https://github.com/itsalectric/643_Project_2/
 	- [EC2 Creation](#ec2-creation)
 
 # Key Terms
-:sparkles:DOUBLE CHECK ACCRONYMS APPEAR:sparkles:  
+✨✨✨DOUBLE CHECK ACCRONYMS APPEAR✨✨✨
 AWS Acronyms for quick reference
 
 |Acronym|Term|Acronym|Term|
@@ -42,9 +42,23 @@ AWS Acronyms for quick reference
 * Github Account
 * Docker Hub Account
 
-# Innitial Setup
+# Initial Setup
 ## EC2 Creation
 AWS automatically opted me for a new GUI when launching a new EC2 instance. The following instructions are the new GUI:  
 1. Navigate to [console.aws.amazon.com/ec2/](http://console.aws.amazon.com/ec2/)
 2. Click "Instances" and click on "Launch Instances"
-	1. hey bb 
+	1. Name the instance to your liking in the "Name and Tags" section
+	2. All other sections can remain the same
+	3. 🌈🌈🌈🌈🌈🌈 COME BACK LATER ABOUT NUM OF INSTANCES
+
+
+# EC2 Setup
+AWS Learner lab uses predefined credentials temporary credentials to access and utilize various services. Generally standard users must create their own access keys and assign security groups on their own. Once a user on a standard account creates connects to an EC2 instance, they are able to use the "aws configure" command to mount their credentials. Instead, those utilizing the learner lab must use the following commands to mount their temporary credentials. The following values (Access Key, Secret Acccess Key, and Session Token) can be found on the "AWS Details" tab of the learner lab.
+
+		export AWS_ACCESS_KEY_ID= [Access Key] 
+		export AWS_SECRET_ACCESS_KEY= [Secret Access Key]
+		export AWS_SESSION_TOKEN= [Session Token] 
+		export AWS_REGION= us-east-1
+		aws ec2 describe-instances --region us-east-1
+
+
