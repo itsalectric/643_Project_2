@@ -13,7 +13,7 @@ https://github.com/itsalectric/643_Project_2/
 - [Key Terms](#key-terms)
 - [Prequisites](#prequisites)
 	- [Downloads](#downloads)
-	- [Create Accounts](#create-accounts) 
+	- [Create Account](#create-account) 
 - [Initial Setup](#innitial-setup)
 	- [AWS Credentials Creation, Retrieval, and Setup](#aws-credentials-creation-retrieval-and-setup)
 	- [Security Group Creation and Configuration](#security-group-creation-and-configuration)
@@ -22,6 +22,10 @@ https://github.com/itsalectric/643_Project_2/
 			- [Learner Lab](#learner-lab)
 			- [Traditional AWS Account](#traditional-aws-account)
 			- [Pem to PPK Conversion](#pem-to-ppk-conversion)
+		- [Connecting to a running EC2 instance](#connecting-to-a-running-ec2-instance)
+			- [Connecting via PuTTy](#connecting-via-putty)
+			- [Connecting via WinSCP](#connecting-via-winscp)
+- [EC2 Instance Setup](#ec2-instance-setup)
 
 
 
@@ -47,7 +51,7 @@ AWS Acronyms for quick reference
 * A Text Editor like Sublime Text (https://www.sublimetext.com/3)
 * A GUI capable of connecting to AWS and securely transferring files such as WinSCP (https://winscp.net/eng/download.php)
 
-## Create Accounts
+## Create Account
 * Standard AWS Account or Learner Lab Account
 * Github Account
 * Docker Hub Account
