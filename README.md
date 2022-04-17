@@ -111,12 +111,12 @@ For this project, there will need to be one main node and 4 worker nodes accordi
 		3. Select the name of previously created security group
 	6. On the top right, you can select the number of instances you wish to run. For this project, change this value to "4" as the function must be run in parallel among 4 instances. These instances will serve as our worker nodes.
 	7. Ensure all the parameters in the summary section directly below the instance textbox is to your standards and click "Launch instance"
-	8. Repeat the steps listed above, except input "1" as the number of instances in step 6 and name it to your liking, this will serve as your main node
+	8. Repeat the steps listed above, except select "Ubuntu" in step 2 and input "1" as the number of instances in step 6. Name it to your from step 1 to distinguish the new instance from the one created above as this will serve as your main node.
 
 
 ### Obtaining PEM/PPK keys
 #### Learner Lab
-1. Choose the "AWS Details" link on the learner lab module page.
+1. Choose the "AWS Details" link on the learner lab module page
 2. Click “Download PEM button” and save the labsuser.pem file
 3. Also click “Download PPK” and save the labuser.ppk file
 
@@ -143,7 +143,7 @@ Open the PuTTY app and have the EC2 console open. A majority of the steps will i
 		1. ex. ecX-X-X-X-X.compute-1.amazonaws.com
 2. Within PuTTY:
 	1. Select "Data" within the "Connection" drop down on the left pane
-		1. Input "ec2-user" in the "Auto-login username" textbox
+		1. Input "ubuntu" in the "Auto-login username" textbox
 	2. Expand the "SSH" section under the "Connections" tree, and select "Auth"
 		1. Click Browse and load your PPK file created from the section above
 3. Navigate back to the main Session Page (optional - create a label for the Session and select save to easily connect back again later)
@@ -156,9 +156,27 @@ Open the WinSCP app and have the EC2 console open. Again, a majority of the step
 2. Within WinSCP:
 	1. Click "New Session
 	2. Paste the "Public IPv4 DNS" within the "Host name" textbox
-	3. Paste "ec2-user" within the "User name" textbox
+	3. Paste "ubuntu" within the "User name" textbox
 
 # EC2 Instance Setup
+
+
+## Instance Update and Package Installations
+Most of the required packages are already installed for the default AWS Linux 2 AMI but not for Ubuntu AMIs hosted on AWS. The following commands to update the instance along with all pre-installed packages and install AWS CLI, pip3, Boto3 (the AWS SDK for Python), and Flintrock:
+		
+	sudo apt update
+	sudo apt upgrade -y
+	
+	sudo apt install python3 -y
+	sudo apt install python3-pip -y
+	pip3 install boto3
+	pip3 install flintrock
+		
+You may get a warning stating how flintrock is installed but does not have a path. You can either restart the instance and it should configure properly, or you can add  directory manually. To quickly add the path to allow for quick flintrock functions within the same session, paste the following in the terminal:
+	
+	echo 'export PATH="$PATH":/home/ubuntu/.local/bin' >> ~/.bashrc
+	source ~/.bashrc
+
 ## AWS CLI Setup
 AWS Learner lab uses predefined temporary credentials to access and utilize various services. Generally standard users must create their own access keys and assign security groups on their own within the IAM Console. Once a user on a standard account creates connects to an EC2 instance, they are able to use the "aws configure" command to mount their credentials. Instead, those utilizing the learner lab must use the following commands to mount their temporary credentials. The following values (Access Key, Secret Acccess Key, and Session Token) can be found on the "AWS Details" tab of the learner lab module. Individuals using the learner lab can, however, grab their information using the AWS Learner Lab following the steps below (the final command is just to ensure the credentials are mounted and working properly):
 1.	Click “AWS Details” on the top right
@@ -171,22 +189,15 @@ AWS Learner lab uses predefined temporary credentials to access and utilize vari
 		export AWS_SESSION_TOKEN=[Session Token] 
 		export AWS_REGION=us-east-1
 		aws ec2 describe-instances --region us-east-1
+		
+In addition, be sure to upload the .pem key assigned to the worker nodes during step 4 in [EC2 Creation, Configuration, and Connection](#ec2-creation-configuration-and-connection). You can upload it to a location of your choice, but keep track of the address as we will need it in the next step. 
 
-## Instance Update and Package Installations
-Most of the required packages are already installed for the default AWS Linux 2 AMI. It is still good practice to run the following commands to update the instance, install Python3 (which also installs pip3 post Python 3.4), install Boto3 (the AWS SDK for Python), and install Flintrock even if you aren't utilizing AWS Linux 2 AMI:
-		
-	sudo yum update
-	sudo yum install python3 -y
-	pip3 install boto3
-	pip3 install flintrock
-		
-		
 ## Configuring Flintrock
-Navigate and open the following file
+Navigate and open the following file:
 		
-	/home/ec2-user/.config/flintrock/config.yaml
+	/home/ubuntu/.config/flintrock/config.yaml
 
-Edit the file yaml file according to the parameters you set when creating the EC2 instances. Most of the information can be found on 
+Edit the file yaml file according to the parameters you set when creating the worker nodes. Most of the information can be found on the EC2 dashboard. Also add the path of the .pem key you just uploaded 
 
 ```yaml
 services:
@@ -216,7 +227,7 @@ provider: ec2
 
 providers:
   ec2:
-    key-name: vokey
+    key-name: key
     identity-file: /path/to/key.pem
     instance-type: m5.large
     region: us-east-1
@@ -258,6 +269,4 @@ debug: false
 ```
 
 # Running with Docker
-# Running without Docker 
-		
-
+# Running without Docker
