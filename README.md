@@ -14,7 +14,7 @@ https://github.com/itsalectric/643_Project_2/
 - [Prequisites](#prequisites)
 	- [Downloads](#downloads)
 	- [Create Account](#create-account) 
-- [Initial Setup](#innitial-setup)
+- [Initial Setup](#initial-setup)
 	- [AWS Credentials Creation, Retrieval, and Setup](#aws-credentials-creation-retrieval-and-setup)
 	- [Security Group Creation and Configuration](#security-group-creation-and-configuration)
 	- [EC2 Creation, Configuration, and Connection](#ec2-creation-configuration-and-connection)
@@ -26,8 +26,14 @@ https://github.com/itsalectric/643_Project_2/
 			- [Connecting via PuTTy](#connecting-via-putty)
 			- [Connecting via WinSCP](#connecting-via-winscp)
 - [EC2 Instance Setup](#ec2-instance-setup)
+	- [AWS CLI Setup](#aws-cli-setup)
+	- [Instance Update and Package Installations](#instance-update-and-package-installations)
+	- [Configuring Flintrock](#configuring-flintrock)
 
 
+
+- [Running with Docker](#running-with-docker)
+- [Running without Docker](#running-without-docker)
 
 
 
@@ -50,6 +56,7 @@ AWS Acronyms for quick reference
 * PuTTYgen (https://www.PuTTYgen.com/download-PuTTY)
 * A Text Editor like Sublime Text (https://www.sublimetext.com/3)
 * A GUI capable of connecting to AWS and securely transferring files such as WinSCP (https://winscp.net/eng/download.php)
+* Docker (https://docs.docker.com/get-docker/)
 
 ## Create Account
 * Standard AWS Account or Learner Lab Account
@@ -86,14 +93,14 @@ It's good practice to create security groups to dictate who has access to aws se
 		2. To designate a specific IP, leave it as "Custom" desired input IP(s)
 
 ## EC2 Creation, Configuration, and Connection
-AWS automatically opted me for a new GUI when launching a new EC2 instance. The following instructions are the new GUI:  
+For this project, there will need to be one main node and 4 worker nodes according to the requirements. In addition to the aforementioned, AWS automatically implemented a new GUI when launching a new EC2 instance. The following instructions are the new GUI:  
 1. Navigate to (http://console.aws.amazon.com/ec2/)
 2. Click "Instances" on the left pane and click on "Launch Instances"
 	1. Name the instance to your liking in the "Name and Tags" section
 	2. Keep default "Amazon Linux 2 Kernel" selected in the "Application and OS Images (Amazon Machine Image)" section
 	3. Edit the "Instance Type" as needed depending on computing needs
 	4. Select an existing or create a new key within the  "Key Pair" section
-		1. Select "Vockey" if using Learner Lab (PEM key can be downloaded on the "AWS Detail" page)
+		1. Select "vockey" if using Learner Lab (PEM key can be downloaded on the "AWS Detail" page)
 		2. Click on "create new key" if using a standard account (or Learner Lab if you desire)
 			1. Enter a name for your key within the "Key pair name" textbox
 			2. Click "create pair" at the bottom of the form
@@ -102,13 +109,14 @@ AWS automatically opted me for a new GUI when launching a new EC2 instance. The 
 		1. Click Edit on the right side of this section
 		2. Click the "Select existing security group" radio button
 		3. Select the name of previously created security group
-	7. 🌈🌈🌈🌈🌈🌈 COME BACK LATER ABOUT NUM OF INSTANCES
-	8. On the top right, you can select the number of instances you wish to run. For this project, change this value to "4"
-	9. Ensure all the parameters in the summary section directly below the instance textbox is to your standards and click "Launch instance"
+	6. On the top right, you can select the number of instances you wish to run. For this project, change this value to "4" as the function must be run in parallel among 4 instances. These instances will serve as our worker nodes.
+	7. Ensure all the parameters in the summary section directly below the instance textbox is to your standards and click "Launch instance"
+	8. Repeat the steps listed above, except input "1" as the number of instances in step 6 and name it to your liking, this will serve as your main node
+
 
 ### Obtaining PEM/PPK keys
 #### Learner Lab
-1. Choose the AWS Details link on the learner lab module page.
+1. Choose the "AWS Details" link on the learner lab module page.
 2. Click “Download PEM button” and save the labsuser.pem file
 3. Also click “Download PPK” and save the labuser.ppk file
 
@@ -124,6 +132,8 @@ Normally, AWS only supplies the pem file during EC2 creation. The following are 
 5. Designate the path for the new PPK file
 
 ### Connecting to a running EC2 instance
+Be sure to perform the following on the singular instance you designated as the Main Node
+
 #### Connecting via PuTTy
 Open the PuTTY app and have the EC2 console open. A majority of the steps will include copying information from the console to the app for authentication.
 1. Within the EC2 console, select the instance you wish to connect to
@@ -149,16 +159,105 @@ Open the WinSCP app and have the EC2 console open. Again, a majority of the step
 	3. Paste "ec2-user" within the "User name" textbox
 
 # EC2 Instance Setup
-AWS Learner lab uses predefined temporary credentials to access and utilize various services. Generally standard users must create their own access keys and assign security groups on their own within the IAM Console. Once a user on a standard account creates connects to an EC2 instance, they are able to use the "aws configure" command to mount their credentials. Instead, those utilizing the learner lab must use the following commands to mount their temporary credentials. The following values (Access Key, Secret Acccess Key, and Session Token) can be found on the "AWS Details" tab of the learner lab. The final command is just to ensure the credentials are mounted and work properly.
-Individuals using the learner lab can, however, grab their SDK information using the AWS Learner Lab following the steps below:
-1.	Do not download or install AWS CLI if using the Learner Lab. The online Learner Lab module has the CLI and can easily retrieve necessary account.
-2.	Click “AWS Details” on the top right
-3.	Click “Show” next to “AWS CLI”
-4.	Copy/take note of the User’s Access key ID and Secret Access Key
+## AWS CLI Setup
+AWS Learner lab uses predefined temporary credentials to access and utilize various services. Generally standard users must create their own access keys and assign security groups on their own within the IAM Console. Once a user on a standard account creates connects to an EC2 instance, they are able to use the "aws configure" command to mount their credentials. Instead, those utilizing the learner lab must use the following commands to mount their temporary credentials. The following values (Access Key, Secret Acccess Key, and Session Token) can be found on the "AWS Details" tab of the learner lab module. Individuals using the learner lab can, however, grab their information using the AWS Learner Lab following the steps below (the final command is just to ensure the credentials are mounted and working properly):
+1.	Click “AWS Details” on the top right
+2.	Click “Show” next to “AWS CLI”
+3.	Copy/take note of the User’s Access key ID, Secret Access Key and Session Token
+4.	Paste the following code with the appropriate values grabbed from the "AWS Detals" into the connected terminal
 
 		export AWS_ACCESS_KEY_ID=[Access Key] 
 		export AWS_SECRET_ACCESS_KEY=[Secret Access Key]
 		export AWS_SESSION_TOKEN=[Session Token] 
 		export AWS_REGION=us-east-1
 		aws ec2 describe-instances --region us-east-1
+
+## Instance Update and Package Installations
+Most of the required packages are already installed for the default AWS Linux 2 AMI. It is still good practice to run the following commands to update the instance, install Python3 (which also installs pip3 post Python 3.4), install Boto3 (the AWS SDK for Python), and install Flintrock even if you aren't utilizing AWS Linux 2 AMI:
+		
+	sudo yum update
+	sudo yum install python3 -y
+	pip3 install boto3
+	pip3 install flintrock
+		
+		
+## Configuring Flintrock
+Navigate and open the following file
+		
+	/home/ec2-user/.config/flintrock/config.yaml
+
+Edit the file yaml file according to the parameters you set when creating the EC2 instances. Most of the information can be found on 
+
+```yaml
+services:
+  spark:
+    version: 3.1.2
+    # git-commit: latest  # if not 'latest', provide a full commit SHA; e.g. d6dc12ef0146ae409834c78737c116050961f350
+    # git-repository:  # optional; defaults to https://github.com/apache/spark
+    # optional; defaults to download from a dynamically selected Apache mirror
+    #   - can be http, https, or s3 URL
+    #   - must contain a {v} template corresponding to the version
+    #   - Spark must be pre-built
+    #   - files must be named according to the release pattern shown here: https://dist.apache.org/repos/dist/release/spark/
+    # download-source: "https://www.example.com/files/spark/{v}/"
+    # download-source: "s3://some-bucket/spark/{v}/"
+    # executor-instances: 1
+  hdfs:
+    version: 3.3.0
+    # optional; defaults to download from a dynamically selected Apache mirror
+    #   - can be http, https, or s3 URL
+    #   - must contain a {v} template corresponding to the version
+    #   - files must be named according to the release pattern shown here: https://dist.apache.org/repos/dist/release/hadoop/common/
+    # download-source: "https://www.example.com/files/hadoop/{v}/"
+    # download-source: "http://www-us.apache.org/dist/hadoop/common/hadoop-{v}/"
+    # download-source: "s3://some-bucket/hadoop/{v}/"
+
+provider: ec2
+
+providers:
+  ec2:
+    key-name: vokey
+    identity-file: /path/to/key.pem
+    instance-type: m5.large
+    region: us-east-1
+    # availability-zone: <name>
+    ami: ami-0aeeebd8d2ab47354  # Amazon Linux 2, us-east-1
+    user: ec2-user
+    # ami: ami-61bbf104  # CentOS 7, us-east-1
+    # user: centos
+    # spot-price: <price>
+    # spot-request-duration: 7d  # duration a spot request is valid, supports d/h/m/s (e.g. 4d 3h 2m 1s)
+    # vpc-id: <id>
+    # subnet-id: <id>
+    # placement-group: <name>
+    # security-groups:
+    #   - group-name1
+    #   - group-name2
+    # instance-profile-name:
+    # tags:
+    #   - key1,value1
+    #   - key2, value2  # leading/trailing spaces are trimmed
+    #   - key3,  # value will be empty
+    # min-root-ebs-size-gb: <size-gb>
+    tenancy: default  # default | dedicated
+    ebs-optimized: no  # yes | no
+    instance-initiated-shutdown-behavior: terminate  # terminate | stop
+    # user-data: /path/to/userdata/script
+    # authorize-access-from:
+    #   - 10.0.0.42/32
+    #   - sg-xyz4654564xyz
+
+launch:
+  num-slaves: 1
+  # install-hdfs: True
+  # install-spark: False
+  # java-version: 8
+
+debug: false
+
+```
+
+# Running with Docker
+# Running without Docker 
+		
 
