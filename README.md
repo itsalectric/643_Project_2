@@ -64,6 +64,17 @@ AWS Acronyms for quick reference
 * Docker Hub Account
 
 # Initial Setup
+
+## AWS S3 Bucket Creation and Storage
+A user can either load the project's files () to an S3 bucket or load them via WinSCP and push the files with various commands to the nodes. Both methods for loading data will be explained later, however an S3 bucket must be created in order to fetch the for the first option mentioned above. To do this:
+1. Navigate to (https://s3.console.aws.amazon.com/s3/)
+2. Click "Create bucket" towards the top left
+3. Input an acceptable "Bucket name"
+4. Deslect "Block all public access"
+5. For simplicity, the rest of the options can be left as default
+6. Scroll to the very bottom of the screen and click "Create Bucket"
+7. Upload both TrainingDataset.csv and ValidationDataset.csv to the newly created bucket
+
 ## AWS Credentials Creation, Retrieval, and Setup
 Many of the required tasks do not apply to the restrictions set by the learner lab. Usually the SDK would be generated through AWS IAM console. Those enrolled in the learner lab do not have access perform the following tasks:
 * Create a user
@@ -71,7 +82,7 @@ Many of the required tasks do not apply to the restrictions set by the learner l
 * Set Parameters (resulting from the aforementioned)
 
 The instructions to create a set of credentials for a standard AWS account can be found here (https://https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html). Users must also edit permissions associated with the newly created IAM user, general instructions can be found here (https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html). Since Learner Lab accounts have rigid accessibility, a default "Lab Role" is already created and serves as one of the few editable account parameters. The following instructions are very similar to editing an already created role from a standard account, but are written to specifically edit the default “Lab Role” given by the AWS Learner Lab:
-1. Navigating to the IAM console (https://console.aws.amazon.com/iamv2/)
+1. Navigate to the IAM console (https://console.aws.amazon.com/iamv2/)
 2. Selecting “Roles” on the left pane and choosing “Lab Role”
 3. Click “Add permissions” then “Attach policies” in the drop down
 4. Select the following permissions:
@@ -93,11 +104,11 @@ It's good practice to create security groups to dictate who has access to aws se
 		2. To designate a specific IP, leave it as "Custom" desired input IP(s)
 
 ## EC2 Creation, Configuration, and Connection
-For this project, there will need to be one main node and 4 worker nodes according to the requirements. In addition to the aforementioned, AWS automatically implemented a new GUI when launching a new EC2 instance. The following instructions are the new GUI:  
+AWS automatically implemented a new GUI when launching a new EC2 instance. The following instructions are the new GUI:  
 1. Navigate to (http://console.aws.amazon.com/ec2/)
 2. Click "Instances" on the left pane and click on "Launch Instances"
 	1. Name the instance to your liking in the "Name and Tags" section
-	2. Keep default "Amazon Linux 2 Kernel" selected in the "Application and OS Images (Amazon Machine Image)" section
+	2. Keep default "Ubuntu" selected in the "Application and OS Images (Amazon Machine Image)" section
 	3. Edit the "Instance Type" as needed depending on computing needs
 	4. Select an existing or create a new key within the  "Key Pair" section
 		1. Select "vockey" if using Learner Lab (PEM key can be downloaded on the "AWS Detail" page)
@@ -109,9 +120,7 @@ For this project, there will need to be one main node and 4 worker nodes accordi
 		1. Click Edit on the right side of this section
 		2. Click the "Select existing security group" radio button
 		3. Select the name of previously created security group
-	6. On the top right, you can select the number of instances you wish to run. For this project, change this value to "4" as the function must be run in parallel among 4 instances. These instances will serve as our worker nodes.
-	7. Ensure all the parameters in the summary section directly below the instance textbox is to your standards and click "Launch instance"
-	8. Repeat the steps listed above, except select "Ubuntu" in step 2 and input "1" as the number of instances in step 6. Name it to your from step 1 to distinguish the new instance from the one created above as this will serve as your main node.
+	6. Ensure all the parameters in the summary section directly below the instance textbox is to your standards and click "Launch instance"
 
 
 ### Obtaining PEM/PPK keys
@@ -158,21 +167,23 @@ Open the WinSCP app and have the EC2 console open. Again, a majority of the step
 	2. Paste the "Public IPv4 DNS" within the "Host name" textbox
 	3. Paste "ubuntu" within the "User name" textbox
 
-# EC2 Instance Setup
-
-
+# Ubuntu EC2 Instance Setup
 ## Instance Update and Package Installations
 Most of the required packages are already installed for the default AWS Linux 2 AMI but not for Ubuntu AMIs hosted on AWS. The following commands to update the instance along with all pre-installed packages and install AWS CLI, pip3, Boto3 (the AWS SDK for Python), and Flintrock:
-		
+
 	sudo apt update
 	sudo apt upgrade -y
-	
+	sudo apt install unzip
+	curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+	unzip awscliv2.zip
+	sudo ./aws/install
 	sudo apt install python3 -y
 	sudo apt install python3-pip -y
 	pip3 install boto3
 	pip3 install flintrock
-		
-You may get a warning stating how flintrock is installed but does not have a path. You can either restart the instance and it should configure properly, or you can add  directory manually. To quickly add the path to allow for quick flintrock functions within the same session, paste the following in the terminal:
+
+
+You may get a warning stating how flintrock is installed but does not have a path. You can either restart the instance and it should configure properly, or you can add  directory manually. To quickly add the path to allow for quick functions within the same session, paste the following in the terminal:
 	
 	echo 'export PATH="$PATH":/home/ubuntu/.local/bin' >> ~/.bashrc
 	source ~/.bashrc
@@ -190,15 +201,18 @@ AWS Learner lab uses predefined temporary credentials to access and utilize vari
 		export AWS_REGION=us-east-1
 		aws ec2 describe-instances --region us-east-1
 		
-In addition, be sure to upload the .pem key assigned to the worker nodes during step 4 in [EC2 Creation, Configuration, and Connection](#ec2-creation-configuration-and-connection). You can upload it to a location of your choice, but keep track of the address as we will need it in the next step. 
+In addition, be sure to upload the .pem key assigned during step 4 in [EC2 Creation, Configuration, and Connection](#ec2-creation-configuration-and-connection). You can upload it to a location of your choice, but keep track of the address as we will need it in the next step. 
 
 ## Configuring Flintrock
 Navigate and open the following file:
 		
 	/home/ubuntu/.config/flintrock/config.yaml
 
-Edit the file yaml file according to the parameters you set when creating the worker nodes. Most of the information can be found on the EC2 dashboard. Also add the path of the .pem key you just uploaded 
+Edit the file yaml file according to the parameters you set when creating the worker nodes. Most of the information can be found on the EC2 dashboard. Also add the path of the .pem key you just uploaded.
 
+:rainbow::rainbow::rainbow::rainbow::rainbow::rainbow:
+EDIT LATER
+:rainbow::rainbow::rainbow::rainbow::rainbow::rainbow:
 ```yaml
 services:
   spark:
@@ -267,6 +281,47 @@ launch:
 debug: false
 
 ```
+
+The following command will utilize the settings from the config.yaml code above. Once the instances have been created, run the second line to gather information of the newly created instances
+	
+	
+	flintrock launch [cluster name]
+	flintrock describe [cluster name]
+
+The expected output should be something similar to the following. Be sure to note the address of the master node as we will need it for future commands
+
+	test:
+	  state: running
+	  node-count: 5
+	  master: ec2-XX-XX-XX-XX.compute-1.amazonaws.com
+	  slaves:
+	    - ec2-XX-XX-XX-XX.compute-1.amazonaws.com
+	    - ec2-XX-XX-XX-XX.compute-1.amazonaws.com
+	    - ec2-XX-XX-XX-XX.compute-1.amazonaws.com
+	    - ec2-XX-XX-XX-XX.compute-1.amazonaws.com
+
+Run either one of the next two options of codes depending on whether you have completed the instrucitons from [AWS S3 Bucket Creation and Storage](#ec2-creation-configuration-and-connection), or are planning to load the data into the cluster from your original Ubuntu instance.
+
+	[//]: # (Ensures the AWS connection configuration is valid by checking the contents of the S3 bucket created above)
+	aws s3 ls s3://[S3 Bucket Name]/
+	
+	[//]: # (Transferring both TrainingDataset.csv and ValidationData.csv from the Ubuntu instance to the cluster (make sure the datasets are loaded through WinSCP))
+	flintrock copy-file [cluster name] [.py file path] [path-to-remote-destination-of-jar]
+	flintrock copy-file [cluster name] [path-to-local-jar] [path-to-remote-destination-of-jar]
+	
+
+Once all parameters allows you to connect to the master node of the newly created cluster. You can also log out of the master node and back to the Ubuntu instance by simply using `exit`
+
+	flintrock login [cluster name]
+	
+	
+	
+# Working within the Master Node
+
+Once logged into the Master Node, run the following commands 
+
+
+
 
 # Running with Docker
 # Running without Docker
