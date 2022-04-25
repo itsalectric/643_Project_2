@@ -282,13 +282,13 @@ debug: false
 
 ```
 
-The following command will utilize the settings from the config.yaml code above. Once the instances have been created, run the second line to gather information of the newly created instances
+The following command will utilize the settings from the config.yaml code above. Once the instances have been created, run the second line to gather information of the newly created instances.
 	
 	
 	flintrock launch [cluster name]
 	flintrock describe [cluster name]
 
-The expected output should be something similar to the following. Be sure to note the address of the master node as we will need it for future commands
+The expected output should be something similar to the following. Be sure to note the address of the master node as we will need it for future commands:
 
 	test:
 	  state: running
@@ -302,10 +302,10 @@ The expected output should be something similar to the following. Be sure to not
 
 Run either one of the next two options of codes depending on whether you have completed the instrucitons from [AWS S3 Bucket Creation and Storage](#ec2-creation-configuration-and-connection), or are planning to load the data into the cluster from your original Ubuntu instance.
 
-	[//]: # (Ensures the AWS connection configuration is valid by checking the contents of the S3 bucket created above)
+	# Ensures the AWS connection configuration is valid by checking the contents of the S3 bucket created above
 	aws s3 ls s3://[S3 Bucket Name]/
 	
-	[//]: # (Transferring both TrainingDataset.csv and ValidationData.csv from the Ubuntu instance to the cluster (make sure the datasets are loaded through WinSCP))
+	# Transferring both TrainingDataset.csv and ValidationData.csv from the Ubuntu instance to the cluster (make sure the datasets are loaded through WinSCP
 	flintrock copy-file [cluster name] [.py file path] [path-to-remote-destination-of-jar]
 	flintrock copy-file [cluster name] [path-to-local-jar] [path-to-remote-destination-of-jar]
 	
