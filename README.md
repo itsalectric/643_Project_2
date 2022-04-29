@@ -181,11 +181,14 @@ Most of the required packages are already installed for the default AWS Linux 2 
 	sudo apt install python3-pip -y
 	pip3 install boto3
 	pip3 install flintrock
+	pip3 install pyspark
 
 
-You may get a warning stating how flintrock is installed but does not have a path. You can either restart the instance and it should configure properly, or you can add  directory manually. To quickly add the path to allow for quick functions within the same session, paste the following in the terminal:
+For simlicity, we'll also add a few paths to allow for easy calling of functions. To quickly add the path to allow for quick functions within the same session, paste the following in the terminal:
 	
 	echo 'export PATH="$PATH":/home/ubuntu/.local/bin' >> ~/.bashrc
+	echo 'export SPARK_HOME=/etc/spark' >> ~/.bashrc
+	echo 'export PATH=$SPARK_HOME/bin:$PATH' >> ~/.bashrc
 	source ~/.bashrc
 
 ## AWS CLI Setup
@@ -208,7 +211,7 @@ Navigate and open the following file:
 		
 	/home/ubuntu/.config/flintrock/config.yaml
 
-Edit the file yaml file according to the parameters you set when creating the worker nodes. Most of the information can be found on the EC2 dashboard. Also add the path of the .pem key you just uploaded.
+Edit the file `config.yaml file` according to the parameters you set when creating the worker nodes. Most of the information can be found on the EC2 dashboard. Also add the path of the .pem key you just uploaded.
 
 :rainbow::rainbow::rainbow::rainbow::rainbow::rainbow:
 EDIT LATER
@@ -300,22 +303,85 @@ The expected output should be something similar to the following. Be sure to not
 	    - ec2-XX-XX-XX-XX.compute-1.amazonaws.com
 	    - ec2-XX-XX-XX-XX.compute-1.amazonaws.com
 
+Sbt was and scala were preiously installed from the very beginning in [Instance Update and Package Installations](Instance Update and Package Installations). You first will need to create an sbt project using the code below. After a few minutes, you will be prompted to give the project a name. Be sure to be within `/home/ubuntu` when running the commands.	
+
+	sbt new scala/scala3.g8
+	[project name]
+
+Once the project is created, edit the `build.sbt` file to mirror your current package versions of packages 
+
+```sbt
+lazy val root = project
+  .in(file("."))
+  .settings(
+    name := "project2",
+    version := "0.1.0-SNAPSHOT",
+
+    scalaVersion := "2.12.15",
+
+    libraryDependencies ++= Seq(
+    	"org.apache.spark" %% "spark-core" % "3.2.1",
+	"org.apache.spark" %% "spark-mllib-local" % "3.2.1"
+	)
+    )
+```
+
+
+
 Run either one of the next two options of codes depending on whether you have completed the instrucitons from [AWS S3 Bucket Creation and Storage](#ec2-creation-configuration-and-connection), or are planning to load the data into the cluster from your original Ubuntu instance.
 
 	# Ensures the AWS connection configuration is valid by checking the contents of the S3 bucket created above
 	aws s3 ls s3://[S3 Bucket Name]/
 	
 	# Transferring both TrainingDataset.csv and ValidationData.csv from the Ubuntu instance to the cluster (make sure the datasets are loaded through WinSCP
-	flintrock copy-file [cluster name] [.py file path] [path-to-remote-destination-of-jar]
-	flintrock copy-file [cluster name] [path-to-local-jar] [path-to-remote-destination-of-jar]
-	
+	flintrock copy-file [cluster name] [.py file path] [remote working directory]
+	flintrock copy-file [cluster name] [TrainingDataset.csv] [remote working directory]
+	flintrock copy-file [cluster name] [ValidationDataset.csv] [remote working directory]
 
-Once all parameters allows you to connect to the master node of the newly created cluster. You can also log out of the master node and back to the Ubuntu instance by simply using `exit`
 
-	flintrock login [cluster name]
+
+Replace the `Main.scala` file located in the `/[poject name]/src/main/scala` with :rainbow::rainbow::rainbow::rainbow::rainbow::rainbow:
+`FILENAME.SCALA`.
+:rainbow::rainbow::rainbow::rainbow::rainbow::rainbow:
+Return back to your main `/[poject name]` directory and run `sbt [poject name]` to create the `[poject file].jar` file required to run over the cluster. The .jar file will be located at `/[poject name]/target/scala-[version]/[poject file].jar`. Replace the associated names created from the steps above and run the following commands.
+
+
+Create an sbt project by making a directory and moving into the newly created empty directory, then run the following commands:
+
+	sbt --sbt-create
 	
+	# you'll enter the sbt command module
+	# We only wanted it to create an empty project so exit the sbt module 
+	exit
 	
-	
+create directories as necessary to mimic the following layout
+![image](https://user-images.githubusercontent.com/103093354/165901731-e1af7dac-4e44-4d12-9da6-2b1abc7f3541.png)
+
+Create a new file named `build.sbt` and import it into the main `[project name]` directory. The content of the file should be as follows:
+
+```sbt
+import Dependencies._
+
+ThisBuild / scalaVersion     := "2.12.15"
+ThisBuild / version          := "0.1.0-SNAPSHOT"
+ThisBuild / organization     := "com.example"
+ThisBuild / organizationName := "example"
+
+lazy val root = (project in file("."))
+  .settings(
+    name := "project2",
+    libraryDependencies ++= Seq("org.apache.spark" %% "spark-core" % "3.2.1",
+      "org.apache.spark" %% "spark-mllib-local" % "3.2.1",
+      "org.apache.hadoop" % "hadoop-aws" % "3.3.0"
+    )
+  )
+```
+
+	flintrock copy-file [cluster name] /home/ubuntu/[poject name]/target/scala-[version]/[poject file].jar /home/ec2-user/[poject file].jar
+
+
+
+
 # Working within the Master Node
 
 Once logged into the Master Node, run the following commands 
