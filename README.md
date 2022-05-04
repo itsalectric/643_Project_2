@@ -33,11 +33,16 @@ https://github.com/itsalectric/643_Project_2/
 
 
 - [AWS EMR Setup and Run](AWS EMR Setup and Run)
+	- [Create EMR](Create EMR)
+	- [Run Spark file on cluster](Run Spark file on cluster)
 - [Docker Setup and Run](Docker Setup and Run)
 	- [Creating Spark Cluster Containters](Creating Spark Cluster Containters)
 	- [Installing Packages to Containers](Installing Packages to Containers)
 	- [Running Script](Running Script)
 	- [Pushing to DockerHub](Pushing to DockerHub)
+
+[End Notes](End Notes)
+
 
 
 
@@ -285,6 +290,8 @@ Create an sbt project by making a directory and moving into the newly created em
 	exit
 	
 create directories as necessary to mimic the following layout
+
+
 ![image](https://user-images.githubusercontent.com/103093354/165901731-e1af7dac-4e44-4d12-9da6-2b1abc7f3541.png)
 
 Create a new file named `build.sbt` and import it into the main `[project name]` directory. Ensure your versions of scala, spark, and java are the same within the main ubuntu instance and the master/worker nodes. Replace `[scala version]` and `[poject name]` accordingly when using the following configurations to edit `build.sbt`:
@@ -344,7 +351,6 @@ LONG STORY SHORT. FLINTROCK ISNT UP TO DATE AND CAN'T CONNECT TO S3 OR READ LOCA
 These issues have been since 2016, people are still having it to this date. The method around it is to play around with different package versions. Do not recommend even listing flintrock as an option for future classes... it's too complicated to set up and even when you do you're not guaranteed to read files in properly over the cluster.
 
 
-
 # AWS EMR Setup and Run
 I'm over writing instructions. I followed everything from setup to deployment using the following instructions:
 * Setup:(https://www.youtube.com/watch?v=r-ig8zpP3EM&ab_channel=AnalyticsExcellence)
@@ -353,9 +359,15 @@ I'm over writing instructions. I followed everything from setup to deployment us
 ## Create EMR
 Use the instructions from the video. It was super simple. I'm not typing it out like i did with the mistake above trying to explain flintrock.
 
-## Access EMR
-
 ## Run Spark file on cluster
+Use the following command to run
+Replace with your master cluster
+
+spark-submit \
+--class tastywine.TastyWine \
+--master spark://hadoop@ec2-XX-XX-XX-XX.compute-1.amazonaws.com:7077 \
+--deploy-mode cluster \
+/home/ubuntu/project2/target/scala-2.11/project2_2.11-0.1.0-SNAPSHOT.jar
 
 
 
@@ -390,3 +402,4 @@ Open Command Line, or Terminal, depending on your OS and run the following comma
 	
 # End Notes
 I tried..
+Don't recommend flintrock as an option
