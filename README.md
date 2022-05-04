@@ -32,13 +32,18 @@ https://github.com/itsalectric/643_Project_2/
 
 
 
-- [Running with Docker](#running-with-docker)
-- [Running without Docker](#running-without-docker)
+- [AWS EMR Setup and Run](AWS EMR Setup and Run)
+- [Docker Setup and Run](Docker Setup and Run)
+	- [Creating Spark Cluster Containters](Creating Spark Cluster Containters)
+	- [Installing Packages to Containers](Installing Packages to Containers)
+	- [Running Script](Running Script)
+	- [Pushing to DockerHub](Pushing to DockerHub)
+
+
 
 
 
 # Key Terms
-✨✨✨DOUBLE CHECK ACCRONYMS APPEAR✨✨✨  
 AWS Acronyms for quick reference
 
 |Acronym|Term|Acronym|Term|
@@ -87,7 +92,9 @@ The instructions to create a set of credentials for a standard AWS account can b
 3. Click “Add permissions” then “Attach policies” in the drop down
 4. Select the following permissions:
 	* AmazonEC2FullAccess
-	* AmazonEMRFullAccessPolicy_v2 (if you choose to use EMR instead of Flintstone)
+	* AmazonEMRFullAccessPolicy_v2 (if you choose to use EMR instead of Flintrock)
+	* AmazonElasticMapReduceforEC2Role (if you choose to use EMR instead of Flintrcock)
+	* AmazonS3FullAccess
 5. Then click Attach policies towards the end of the page
 6. Users must attach the Lab Role profile to EC2 instances which will be discussed in the next section
 
@@ -187,6 +194,7 @@ Most of the required packages are already installed for the default AWS Linux 2 
 For simlicity, we'll also add a few paths to allow for easy calling of functions. To quickly add the path to allow for quick functions within the same session, paste the following in the terminal:
 	
 	echo 'export PATH="$PATH":/home/ubuntu/.local/bin' >> ~/.bashrc
+	echo 'export PATH=$PATH:$SPARK_HOME/bin' >> ~/.bashrc
 	echo 'export SPARK_HOME=/etc/spark' >> ~/.bashrc
 	echo 'export PATH=$SPARK_HOME/bin:$PATH' >> ~/.bashrc
 	source ~/.bashrc
@@ -211,78 +219,43 @@ Navigate and open the following file:
 		
 	/home/ubuntu/.config/flintrock/config.yaml
 
-Edit the file `config.yaml file` according to the parameters you set when creating the worker nodes. Most of the information can be found on the EC2 dashboard. Also add the path of the .pem key you just uploaded.
+Edit the file `config.yaml` file according to the parameters you set when creating the worker nodes. Most of the information can be found on the EC2 dashboard. Also add the path of the .pem key you just uploaded.
 
-:rainbow::rainbow::rainbow::rainbow::rainbow::rainbow:
-EDIT LATER
-:rainbow::rainbow::rainbow::rainbow::rainbow::rainbow:
 ```yaml
+# place in:
+# /home/ubuntu/.config/flintrock 
+
+
 services:
   spark:
-    version: 3.1.2
-    # git-commit: latest  # if not 'latest', provide a full commit SHA; e.g. d6dc12ef0146ae409834c78737c116050961f350
-    # git-repository:  # optional; defaults to https://github.com/apache/spark
-    # optional; defaults to download from a dynamically selected Apache mirror
-    #   - can be http, https, or s3 URL
-    #   - must contain a {v} template corresponding to the version
-    #   - Spark must be pre-built
-    #   - files must be named according to the release pattern shown here: https://dist.apache.org/repos/dist/release/spark/
-    # download-source: "https://www.example.com/files/spark/{v}/"
-    # download-source: "s3://some-bucket/spark/{v}/"
-    # executor-instances: 1
+    version: 3.2.1
   hdfs:
     version: 3.3.0
-    # optional; defaults to download from a dynamically selected Apache mirror
-    #   - can be http, https, or s3 URL
-    #   - must contain a {v} template corresponding to the version
-    #   - files must be named according to the release pattern shown here: https://dist.apache.org/repos/dist/release/hadoop/common/
-    # download-source: "https://www.example.com/files/hadoop/{v}/"
-    # download-source: "http://www-us.apache.org/dist/hadoop/common/hadoop-{v}/"
-    # download-source: "s3://some-bucket/hadoop/{v}/"
 
 provider: ec2
 
 providers:
   ec2:
-    key-name: key
-    identity-file: /path/to/key.pem
-    instance-type: m5.large
+    key-name: vockey
+    identity-file: /home/ubuntu/labsuser.pem
+    instance-type: t2.medium
     region: us-east-1
-    # availability-zone: <name>
-    ami: ami-0aeeebd8d2ab47354  # Amazon Linux 2, us-east-1
+    ami: ami-03ededff12e34e59e  # Amazon Linux 2, us-east-1
     user: ec2-user
-    # ami: ami-61bbf104  # CentOS 7, us-east-1
-    # user: centos
-    # spot-price: <price>
-    # spot-request-duration: 7d  # duration a spot request is valid, supports d/h/m/s (e.g. 4d 3h 2m 1s)
-    # vpc-id: <id>
-    # subnet-id: <id>
-    # placement-group: <name>
-    # security-groups:
-    #   - group-name1
-    #   - group-name2
-    # instance-profile-name:
-    # tags:
-    #   - key1,value1
-    #   - key2, value2  # leading/trailing spaces are trimmed
-    #   - key3,  # value will be empty
-    # min-root-ebs-size-gb: <size-gb>
     tenancy: default  # default | dedicated
     ebs-optimized: no  # yes | no
     instance-initiated-shutdown-behavior: terminate  # terminate | stop
-    # user-data: /path/to/userdata/script
-    # authorize-access-from:
-    #   - 10.0.0.42/32
-    #   - sg-xyz4654564xyz
+    security-groups:
+      - HackMeBaby
+    instance-profile-name: LabInstanceProfile
+    
 
 launch:
-  num-slaves: 1
-  # install-hdfs: True
-  # install-spark: False
-  # java-version: 8
+  num-slaves: 4
+  install-hdfs: True
+  install-spark: True
 
 debug: false
-
 ```
 
 The following command will utilize the settings from the config.yaml code above. Once the instances have been created, run the second line to gather information of the newly created instances.
@@ -303,49 +276,6 @@ The expected output should be something similar to the following. Be sure to not
 	    - ec2-XX-XX-XX-XX.compute-1.amazonaws.com
 	    - ec2-XX-XX-XX-XX.compute-1.amazonaws.com
 
-Sbt was and scala were preiously installed from the very beginning in [Instance Update and Package Installations](Instance Update and Package Installations). You first will need to create an sbt project using the code below. After a few minutes, you will be prompted to give the project a name. Be sure to be within `/home/ubuntu` when running the commands.	
-
-	sbt new scala/scala3.g8
-	[project name]
-
-Once the project is created, edit the `build.sbt` file to mirror your current package versions of packages 
-
-```sbt
-lazy val root = project
-  .in(file("."))
-  .settings(
-    name := "project2",
-    version := "0.1.0-SNAPSHOT",
-
-    scalaVersion := "2.12.15",
-
-    libraryDependencies ++= Seq(
-    	"org.apache.spark" %% "spark-core" % "3.2.1",
-	"org.apache.spark" %% "spark-mllib-local" % "3.2.1"
-	)
-    )
-```
-
-
-
-Run either one of the next two options of codes depending on whether you have completed the instrucitons from [AWS S3 Bucket Creation and Storage](#ec2-creation-configuration-and-connection), or are planning to load the data into the cluster from your original Ubuntu instance.
-
-	# Ensures the AWS connection configuration is valid by checking the contents of the S3 bucket created above
-	aws s3 ls s3://[S3 Bucket Name]/
-	
-	# Transferring both TrainingDataset.csv and ValidationData.csv from the Ubuntu instance to the cluster (make sure the datasets are loaded through WinSCP
-	flintrock copy-file [cluster name] [.py file path] [remote working directory]
-	flintrock copy-file [cluster name] [TrainingDataset.csv] [remote working directory]
-	flintrock copy-file [cluster name] [ValidationDataset.csv] [remote working directory]
-
-
-
-Replace the `Main.scala` file located in the `/[poject name]/src/main/scala` with :rainbow::rainbow::rainbow::rainbow::rainbow::rainbow:
-`FILENAME.SCALA`.
-:rainbow::rainbow::rainbow::rainbow::rainbow::rainbow:
-Return back to your main `/[poject name]` directory and run `sbt [poject name]` to create the `[poject file].jar` file required to run over the cluster. The .jar file will be located at `/[poject name]/target/scala-[version]/[poject file].jar`. Replace the associated names created from the steps above and run the following commands.
-
-
 Create an sbt project by making a directory and moving into the newly created empty directory, then run the following commands:
 
 	sbt --sbt-create
@@ -357,19 +287,19 @@ Create an sbt project by making a directory and moving into the newly created em
 create directories as necessary to mimic the following layout
 ![image](https://user-images.githubusercontent.com/103093354/165901731-e1af7dac-4e44-4d12-9da6-2b1abc7f3541.png)
 
-Create a new file named `build.sbt` and import it into the main `[project name]` directory. The content of the file should be as follows:
+Create a new file named `build.sbt` and import it into the main `[project name]` directory. Ensure your versions of scala, spark, and java are the same within the main ubuntu instance and the master/worker nodes. Replace `[scala version]` and `[poject name]` accordingly when using the following configurations to edit `build.sbt`:
 
 ```sbt
 import Dependencies._
 
-ThisBuild / scalaVersion     := "2.12.15"
+ThisBuild / scalaVersion     := "[scala version]"
 ThisBuild / version          := "0.1.0-SNAPSHOT"
 ThisBuild / organization     := "com.example"
 ThisBuild / organizationName := "example"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "project2",
+    name := "[poject name]",
     libraryDependencies ++= Seq("org.apache.spark" %% "spark-core" % "3.2.1",
       "org.apache.spark" %% "spark-mllib-local" % "3.2.1",
       "org.apache.hadoop" % "hadoop-aws" % "3.3.0"
@@ -377,17 +307,86 @@ lazy val root = (project in file("."))
   )
 ```
 
+Within the main `[project name]` directory run the following command
+
+	sbt package
+
+This should create a new `.jar` file located in the `/[poject name]/src/main/scala` with :rainbow::rainbow::rainbow::rainbow::rainbow::rainbow:
+`FILENAME.SCALA`.
+:rainbow::rainbow::rainbow::rainbow::rainbow::rainbow:
+Return back to your main `/[poject name]` directory and run `sbt [poject name]` to create the `[poject file].jar` file required to run over the cluster. The .jar file will be located at `/[poject name]/target/scala-[version]/[poject file].jar`. Replace the associated names created from the steps above and run the following commands.
+
+Ensure the steps within [AWS S3 Bucket Creation and Storage](#ec2-creation-configuration-and-connection) are completed, then transfer the newly created 
+
+	# Ensures the AWS connection configuration is valid by checking the contents of the S3 bucket created above
+	aws s3 ls s3://[S3 Bucket Name]/
+	
+	# Transferring both the scala script from the Ubuntu instance over to the cluster
 	flintrock copy-file [cluster name] /home/ubuntu/[poject name]/target/scala-[version]/[poject file].jar /home/ec2-user/[poject file].jar
 
 
 
 
-# Working within the Master Node
+Go to your home directory and download the `aws-java-sdk.jar` and `hadoop-aws.jar`  files and send them to the nodes so all instances can access the s3 buckets
+	
+	curl https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.7.4/aws-java-sdk-1.7.4.jar -o aws-java-sdk-1.7.4.jar
+	curl https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.0/hadoop-aws-3.3.0.jar -o hadoop-aws-3.3.0.jar
 
-Once logged into the Master Node, run the following commands 
+	flintrock copy-file wine-not /home/ubuntu/aws-java-sdk-1.12.210.jar /home/ec2-user/spark/jars/
+	flintrock copy-file wine-not /home/ubuntu/hadoop-common-3.3.0.jar /home/ec2-user/spark/jars/
+
+
+LONG STORY SHORT. FLINTROCK ISNT UP TO DATE AND CAN'T CONNECT TO S3 OR READ LOCALLY LOADING FILES IN:
+(https://kandi.openweaver.com/python/nchammas/flintrock)
+(https://stackoverflow.com/questions/63494366/cant-read-csv-from-s3-to-pyspark-dataframe-on-a-ec2-instance-on-aws)
+(https://github.com/nchammas/flintrock/issues/336)
+
+These issues have been since 2016, people are still having it to this date. The method around it is to play around with different package versions. Do not recommend even listing flintrock as an option for future classes... it's too complicated to set up and even when you do you're not guaranteed to read files in properly over the cluster.
 
 
 
+# AWS EMR Setup and Run
+I'm over writing instructions. I followed everything from setup to deployment using the following instructions:
+* Setup:(https://www.youtube.com/watch?v=r-ig8zpP3EM&ab_channel=AnalyticsExcellence)
+* Deployment (https://docs.aws.amazon.com/emr/latest/ManagementGuide/)
 
-# Running with Docker
-# Running without Docker
+## Create EMR
+Use the instructions from the video. It was super simple. I'm not typing it out like i did with the mistake above trying to explain flintrock.
+
+## Access EMR
+
+## Run Spark file on cluster
+
+
+
+# Docker Setup and Run
+I'm over writing instructions. I followed everything for setup using the following instructions (https://towardsdatascience.com/diy-apache-spark-docker-bb4f11c10d24). A quick synopsis of commands are below:
+
+Open Command Line, or Terminal, depending on your OS and run the following commands on your local machine
+	
+	docker pull sdesilva26/spark_master:0.0.2
+	docker pull sdesilva26/spark_worker:0.0.2
+	docker network create --driver bridge spark-net-bridge 
+	
+## Creating Spark Cluster Containters	
+
+	docker pull sdesilva26/spark_master:0.0.2
+	docker pull sdesilva26/spark_worker:0.0.2
+	docker network create --driver bridge spark-net-bridge
+	docker run -dit --name sparker-master --network spark-net-bridge --entrypoint /bin/bash sdesilva26/spark_master:0.0.2)
+	docker run -dit --name sparker-worker1 --network spark-net-bridge --entrypoint /bin/bash sdesilva26/spark_master:0.0.2)
+	docker run -dit --name sparker-worker2 --network spark-net-bridge --entrypoint /bin/bash sdesilva26/spark_master:0.0.2)
+	docker run -dit --name sparker-worker3 --network spark-net-bridge --entrypoint /bin/bash sdesilva26/spark_master:0.0.2)
+	docker run -dit --name sparker-worker4 --network spark-net-bridge --entrypoint /bin/bash sdesilva26/spark_master:0.0.2)
+
+## Installing Packages to Containers
+
+## Running Script
+
+## Pushing to DockerHub
+
+	docker push <hub-user>/<repo-name>:<tag>
+	
+	
+# End Notes
+I tried..
